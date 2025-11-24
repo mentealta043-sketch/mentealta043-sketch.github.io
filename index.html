@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Funil Emagrex - Acesso Secreto</title>
+<style>
+html{font-size:130%;}
+
+body{margin:0;background:#000;color:white;font-family:Arial;}
+
+.timer-box{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    background:#d00000;
+    padding:18px 0;
+    text-align:center;
+    font-size:22px;
+    font-weight:bold;
+    z-index:9999;
+    color:#fff;
+    border-bottom:4px solid #000;
+    box-shadow:0 0 18px #ff1b1b, 0 0 28px #ff0000;
+    animation:pulso 1.2s infinite ease-in-out;
+}
+
+
+#timer{
+    font-size:38px;
+    display:block;
+    color:#ffffff;
+    text-shadow:0 0 10px #ff0000,0 0 20px #ff2b2b,0 0 40px #ff0000;
+    font-weight:900;
+}
+
+.container{width:90%;margin:120px auto;}
+h2{text-align:center;color:#00eaff;font-size:24px;margin-bottom:15px;}
+input{width:100%;padding:14px;margin:8px 0;border-radius:10px;border:1px solid #00eaff;background:#000;color:white;}
+button{width:100%;padding:14px;border:none;border-radius:10px;font-size:18px;cursor:pointer;margin-top:10px;}
+#enviar{background:#000;}
+.box{background:#000;padding:20px;border-radius:12px;margin-top:25px;border:1px solid #00eaff;text-align:center;}
+.chatbox{margin-top:25px;background:#000;border:1px solid #00eaff;padding:15px;border-radius:12px;}
+.chat-header{text-align:center;color:#00eaff;font-size:20px;margin-bottom:10px;}
+.option{background:#000;border:1px solid #00eaff;padding:10px;border-radius:10px;margin-top:8px;cursor:pointer;}
+.response{display:none;background:#000;border-left:3px solid #00eaff;margin-top:5px;padding:10px;border-radius:8px;}
+.button-buy{background:#000;padding:12px;border-radius:10px;text-align:center;margin-top:15px;font-size:18px;cursor:pointer;}
+.button-whats{background:#25d366;color:#000;padding:12px;border-radius:10px;text-align:center;margin-top:10px;font-size:18px;cursor:pointer;}
+/* secret modal */
+#secret-overlay{position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:10000;padding:20px;}
+#secret-box{background:#000;border:2px solid #00eaff;padding:20px;border-radius:12px;max-width:720px;width:100%;color:#fff;}
+#secret-box h3{color:#00eaff;}
+.small{font-size:14px;color:#ddd;margin-top:8px;}
+.copy-btn{background:#000;color:#fff;padding:10px;border-radius:8px;border:none;margin-top:10px;cursor:pointer;width:100%;}
+.close-btn{background:#000;color:#fff;padding:10px;border-radius:8px;border:none;margin-top:10px;cursor:pointer;width:100%;}
+
+@keyframes pulso{
+    0%{transform:scale(1);}
+    50%{transform:scale(1.04);}    
+    100%{transform:scale(1);
+}
+
+@keyframes pulsebtn{
+ 0%{transform:scale(1);}    
+ 50%{transform:scale(1.05);}    
+ 100%{transform:scale(1);}    
+}
+
+
+.qa-option{
+    background:#0a0a0a;
+    border:1px solid #003344;
+    padding:16px;
+    border-radius:10px;
+    margin-top:12px;
+    cursor:pointer;
+    color:#fff;
+    font-size:18px;
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:14px;
+    width:100%;
+    box-sizing:border-box;
+}
+
+
+.qa-option{
+    background:#0a0a0a;
+    border:1px solid #003344;
+    padding:16px;
+    border-radius:10px;
+    margin-top:12px;
+    cursor:pointer;
+    color:#fff;
+    font-size:18px;
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:14px;
+    width:100%;
+    box-sizing:border-box;
+}
+.qa-option *{
+ margin:0 !important;
+ padding:0 !important;
+}
+
+
+.qa-option span, .qa-option{
+    white-space:nowrap !important;
+}
+
+</style>
+<script>
+const LEADS_ENDPOINT = "https://script.google.com/macros/s/AKfycbw32IgbOyBZeVtc6eCAAuLDwy6CeWpy-BR6QKrT4g8Grx2wgzNPnRaA8htYKIGvl_of/exec";
+
+/* timer */
+let totalSeconds=10800;
+function updateTimer(){
+ let h=String(Math.floor(totalSeconds/3600)).padStart(2,'0');
+ let m=String(Math.floor((totalSeconds%3600)/60)).padStart(2,'0');
+ let s=String(totalSeconds%60).padStart(2,'0');
+ const el = document.getElementById("timer");
+ if(el) el.innerHTML=h+":"+m+":"+s;
+ if(totalSeconds>0) totalSeconds--;
+}
+setInterval(updateTimer,1000);
+
+/* toggle FAQ */
+function toggle(id){
+ let box=document.getElementById(id);
+ if(box){
+   box.style.display = (box.style.display==='block') ? 'none' : 'block';
+ }
+}
+
+/* generate coupon from name */
+function generateCoupon(name){
+  if(!name) name = "USER";
+  name = name.replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,6);
+  const rand = Math.floor(Math.random()*9000)+1000;
+  return name + "-" + rand;
+}
+
+/* show secret content */
+function showSecret(nome){
+  const overlay = document.getElementById("secret-overlay");
+  const couponEl = document.getElementById("secret-coupon");
+  const welcome = document.getElementById("secret-welcome");
+  const coupon = generateCoupon(nome);
+  couponEl.textContent = coupon;
+  welcome.textContent = "Parabéns, " + (nome||"amigo") + "! Acesso liberado.";
+  overlay.style.display = "flex";
+}
+
+/* copy coupon */
+function copyCoupon(){
+  const text = document.getElementById("secret-coupon").textContent;
+  navigator.clipboard.writeText(text).then(()=> {
+    alert("Cupom copiado: " + text);
+  }).catch(()=> alert("Não foi possível copiar. Segure o texto e copie manualmente."));
+}
+
+/* close secret overlay */
+function closeSecret(redirectWhats=false){
+  document.getElementById("secret-overlay").style.display = "none";
+  if(redirectWhats){
+    // go to whatsapp with personalized message
+    const nome = document.getElementById("nome").value || "";
+    const msg = `Olá, meu nome é ${nome}. Quero liberar meu acesso ao Método Emagrex.`;
+    window.location.href = "https://wa.me/5571986257247?text=" + encodeURIComponent(msg);
+  }
+}
+
+/* enviar dados e liberar conteúdo secreto */
+function enviarDados(){
+ const nome = document.getElementById("nome").value.trim();
+ const email = document.getElementById("email").value.trim();
+ const data = document.getElementById("data").value.trim();
+
+ if(!nome || !email || !data){
+   alert("Preencha todos os campos antes de continuar.");
+   return;
+ }
+
+ const btn = document.getElementById("enviar");
+ btn.disabled = true;
+ btn.innerText = "Enviando...";
+
+ // send to leads endpoint (no-cors fire-and-forget)
+ fetch(LEADS_ENDPOINT, {
+   method: "POST",
+   mode: "no-cors",
+   headers: { "Content-Type": "application/json" },
+   body: JSON.stringify({ nome:nome, email:email, data:data })
+ }).catch(e => console.log("lead send error", e));
+
+ // show secret content immediately (we consider form valid)
+ showSecret(nome);
+
+ btn.disabled = false;
+ btn.innerText = "ENVIAR";
+}
+</script>
+
+/* 3D Neon pulse and click sound (WebAudio) */
+<style>
+h1,h2,h3,h4,h5,h6,p,span,button,input{font-size:inherit;color:inherit;}
+
+/* Neon pulsing button */
+.neon-btn{
+  background: linear-gradient(180deg,#00eaff 0%, #008fb3 100%);
+  color:#001014;
+  border-radius:14px;
+  padding:12px;
+  font-weight:700;
+  box-shadow: 0 6px 20px rgba(0,234,255,0.18), 0 0 18px rgba(0,234,255,0.12) inset;
+  transform: translateZ(0);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  cursor:pointer;
+  perspective:800px;
+}
+.neon-btn:active{ transform: translateY(2px) scale(0.997); box-shadow: 0 3px 12px rgba(0,234,255,0.12);}
+
+/* Pulse animation */
+@keyframes neonPulse {
+  0% { box-shadow: 0 0 6px rgba(0,234,255,0.12), 0 0 18px rgba(0,234,255,0.06); transform: translateY(0) translateZ(0) scale(1); }
+  50% { box-shadow: 0 0 20px rgba(0,234,255,0.28), 0 0 40px rgba(0,234,255,0.12); transform: translateY(-6px) translateZ(6px) scale(1.02); }
+  100% { box-shadow: 0 0 6px rgba(0,234,255,0.12), 0 0 18px rgba(0,234,255,0.06); transform: translateY(0) translateZ(0) scale(1); }
+}
+.neon-pulse { animation: neonPulse 2.5s infinite ease-in-out; }
+
+/* subtle 3D card */
+.card-3d { transform: translateZ(0); transition: transform .25s ease, box-shadow .25s ease; }
+.card-3d:hover { transform: translateY(-6px) rotateX(3deg); box-shadow: 0 18px 40px rgba(0,0,0,0.6); }
+
+/* keep whatsapp green button style */
+.button-whats{background:#25d366;color:#000;padding:12px;border-radius:10px;text-align:center;margin-top:10px;font-size:18px;cursor:pointer;}
+
+@keyframes pulso{
+    0%{transform:scale(1);}    
+    50%{transform:scale(1.04);}    
+    100%{transform:scale(1);}    
+}
+
+@keyframes pulsebtn{
+ 0%{transform:scale(1);}    
+ 50%{transform:scale(1.05);}    
+ 100%{transform:scale(1);}    
+}
+
+</style>
+
+<script>
+/* WebAudio click sound - lightweight and mobile-friendly */
+function playClick(freq=880, time=0.06){
+  try {
+    var AudioContext = window.AudioContext || window.webkitAudioContext;
+    if(!AudioContext) return;
+    var ctx = new AudioContext();
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = freq;
+    g.gain.value = 0.0025;
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.start(0);
+    g.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + time);
+    setTimeout(function(){ try{o.stop(); ctx.close();}catch(e){} }, (time+0.02)*1000);
+  } catch(e){ console.log('audio err', e); }
+}
+
+/* hook up clicks to play sound and add pulse */
+function hookSoundsAnd3D(){
+  var enviar = document.getElementById('enviar');
+  if(enviar){
+    enviar.classList.add('neon-btn','neon-pulse','card-3d');
+    enviar.addEventListener('click', function(){ playClick(880,0.08); });
+  }
+  var buy = document.querySelector('.button-buy');
+  if(buy){
+    buy.classList.add('neon-btn','card-3d');
+    buy.addEventListener('click', function(e){ playClick(720,0.08); });
+    buy.addEventListener('mouseover', function(){ buy.classList.add('neon-pulse'); });
+    buy.addEventListener('mouseout', function(){ buy.classList.remove('neon-pulse'); });
+  }
+  var whats = document.querySelector('.button-whats');
+  if(whats){
+    // keep green styling, add subtle 3D hover
+    whats.classList.add('card-3d');
+    whats.addEventListener('click', function(){ playClick(660,0.06); });
+  }
+  // FAQ options sounds
+  var opts = document.querySelectorAll('.option');
+  opts.forEach(function(o){
+    o.addEventListener('click', function(){ playClick(1200,0.04); o.classList.toggle('card-3d'); });
+  });
+}
+
+// Wait until DOM ready
+document.addEventListener('DOMContentLoaded', function(){
+  hookSoundsAnd3D();
+});
+</script>
+
+<style>
+h1,h2,h3,h4,h5,h6,p,span,button,input{font-size:inherit;color:inherit;}
+
+#typingTitle{
+  font-size: 32px !important;
+  color: #00eaff !important;
+  text-shadow: 0 0 12px rgba(0,234,255,0.9), 0 0 22px rgba(0,234,255,0.6);
+  letter-spacing: 2px;
+}
+
+@keyframes pulso{
+    0%{transform:scale(1);}    
+    50%{transform:scale(1.04);}    
+    100%{transform:scale(1);}    
+}
+
+@keyframes pulsebtn{
+ 0%{transform:scale(1);}    
+ 50%{transform:scale(1.05);}    
+ 100%{transform:scale(1);}    
+}
+
+</style>
+
+</head>
+<body>
+<div class="timer-box">
+OFERTA EXPIRA EM:
+<span id="timer">03:00:00</span>
+</div>
+
+<div class="container">
+<!-- GAMIFICATION START -->
+<style>
+h1,h2,h3,h4,h5,h6,p,span,button,input{font-size:inherit;color:inherit;}
+
+#progressBox{
+  background:#000;
+  border:1px solid #00eaff;
+  border-radius:12px;
+  padding:12px;
+  margin-top:18px;
+  box-shadow:0 0 12px rgba(0,234,255,0.25);
+}
+#progressLabel{
+  color:#00eaff;
+  font-weight:700;
+  margin-bottom:8px;
+  display:block;
+  font-size:14px;
+}
+#progressBar{
+  width:100%;
+  height:16px;
+  background:#000;
+  border-radius:10px;
+  overflow:hidden;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#00eaff,#00b8d1);
+  box-shadow:0 0 10px rgba(0,234,255,0.45);
+  transition:width .45s cubic-bezier(.2,.9,.3,1);
+}
+#progressTip{color:#9fdfff;font-size:13px;margin-top:8px;}
+
+@keyframes pulso{
+    0%{transform:scale(1);}    
+    50%{transform:scale(1.04);}    
+    100%{transform:scale(1);}    
+}
+
+@keyframes pulsebtn{
+ 0%{transform:scale(1);}    
+ 50%{transform:scale(1.05);}    
+ 100%{transform:scale(1);}    
+}
+
+</style>
+
+<div id="progressBox" aria-hidden="false">
+  <span id="progressLabel">PROGRESSO: 0%</span>
+  <div id="progressBar" role="progressbar" aria-valuemin="0" aria-valuemax="100"><div id="progressFill"></div></div>
+  <div id="progressTip">Complete o formulário para desbloquear o conteúdo.</div>
+</div>
+
+<script>
+// GAMIFICATION LOGIC
+(function(){
+  var progresso = 0;
+  var hasTypedNome = false, hasTypedEmail = false, hasTypedData = false;
+
+  function setProgress(p){
+    progresso = Math.max(0, Math.min(100, p));
+    var fill = document.getElementById('progressFill');
+    var label = document.getElementById('progressLabel');
+    if(fill) fill.style.width = progresso + '%';
+    if(label) label.textContent = 'PROGRESSO: ' + progresso + '%';
+    // accessibility
+    var bar = document.querySelector('#progressBar');
+    if(bar) bar.setAttribute('aria-valuenow', progresso);
+  }
+
+  function addProgress(delta){ setProgress(progresso + delta); }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    var nome = document.getElementById('nome');
+    var email = document.getElementById('email');
+    var data = document.getElementById('data');
+    var enviar = document.getElementById('enviar');
+
+    // initial small progress if fields have placeholder non-empty
+    setProgress(5);
+
+    if(nome){
+      nome.addEventListener('input', function(){
+        if(!hasTypedNome && nome.value.trim().length>0){ addProgress(15); hasTypedNome = true; }
+      });
+    }
+    if(email){
+      email.addEventListener('input', function(){
+        if(!hasTypedEmail && email.value.trim().length>0){ addProgress(15); hasTypedEmail = true; }
+      });
+    }
+    if(data){
+      data.addEventListener('input', function(){
+        if(!hasTypedData && data.value.trim().length>0){ addProgress(15); hasTypedData = true; }
+      });
+    }
+    if(enviar){
+      enviar.addEventListener('click', function(){
+        // clicking enviar gives big progress if form valid
+        var n = nome ? nome.value.trim() : '';
+        var e = email ? email.value.trim() : '';
+        var d = data ? data.value.trim() : '';
+        if(n && e && d){
+          addProgress(55);
+          // visual reward when complete
+          setTimeout(function(){
+            if(document.getElementById('progressTip')) document.getElementById('progressTip').textContent = 'Concluído! Conteúdo desbloqueado.';
+            document.getElementById('progressBox').style.boxShadow = '0 0 22px rgba(0,234,255,0.5)';
+          }, 300);
+        } else {
+          // small shake to indicate missing fields
+          var box = document.getElementById('progressBox');
+          if(box){
+            box.style.transition = 'transform 0.15s';
+            box.style.transform = 'translateX(-6px)';
+            setTimeout(function(){ box.style.transform = 'translateX(6px)'; }, 150);
+            setTimeout(function(){ box.style.transform = 'translateX(0)'; }, 300);
+          }
+        }
+      });
+    }
+  });
+})();
+</script>
+<!-- GAMIFICATION END -->
+
+<h2><span id="typingTitle" data-text="COMPLETE PARA CONTINUAR"></span></h2>
+
+<input id="nome" placeholder="Nome e sobrenome">
+<input id="email" placeholder="Seu e-mail" type="email">
+<input id="data" placeholder="Data de nascimento 00/00/0000">
+<input id="whatsapp" placeholder="Seu WhatsApp (DDD + número)">
+
+<!-- UNLOCK + SEND BLOCK (clean, black+blue theme) -->
+<style>
+h1,h2,h3,h4,h5,h6,p,span,button,input{font-size:inherit;color:inherit;}
+
+/* Ensure button colors match preto + azul */
+.unlock-btn{
+  width:100%;
+  padding:14px;
+  font-size:18px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  font-weight:700;
+  background:linear-gradient(90deg,#00eaff,#008fb3);
+  color:#001;
+  box-shadow:0 10px 30px rgba(0,234,255,0.08), inset 0 1px 0 rgba(255,255,255,0.02);
+}
+.send-btn{
+  width:100%;
+  padding:14px;
+  font-size:18px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  font-weight:700;
+  background:#000;
+  color:#00eaff;
+  box-shadow:0 10px 30px rgba(0,0,0,0.6);
+  border:1px solid rgba(0,234,255,0.12);
+}
+
+@keyframes pulso{
+    0%{transform:scale(1);}    
+    50%{transform:scale(1.04);}    
+    100%{transform:scale(1);}    
+}
+
+@keyframes pulsebtn{
+ 0%{transform:scale(1);}    
+ 50%{transform:scale(1.05);}    
+ 100%{transform:scale(1);}    
+}
+
+</style>
+
+<div id="unlock_area">
+  
+
+  <button id="enviar_whatsapp" class="send-btn" type="button" style="display:block;margin-top:12px;">
+    ENVIAR
+  </button>
+</div>
+
+<script>
+(function(){
+  // Safe helper to set progress bar by id 'barra' or 'fill' variants
+  function setProgress100(){
+    var el = document.getElementById('barra') || document.getElementById('fill') || null;
+    if(!el) {
+      // try create a small visible progress bar if none
+      var wrap = document.querySelector('.progress-container') || document.querySelector('.progress-wrap') || null;
+      if(wrap){
+        var bar = document.createElement('div');
+        bar.id = 'barra';
+        bar.style.background = '#031016';
+        bar.style.height = '12px';
+        bar.style.borderRadius = '8px';
+        bar.style.marginTop = '12px';
+        var inner = document.createElement('div');
+        inner.style.width = '100%';
+        inner.style.height = '100%';
+        inner.style.background = 'linear-gradient(90deg,#00eaff,#008fb3)';
+        inner.style.boxShadow = '0 6px 20px rgba(0,234,255,0.12)';
+        bar.appendChild(inner);
+        wrap.appendChild(bar);
+        return;
+      }
+      return;
+    }
+    // if element is container, set its inner fill; if it's the fill itself, set width
+    if(el.classList && el.classList.contains('progress-fill')) {
+      el.style.width = '100%';
+    } else if(el.id === 'fill') {
+      el.style.width = '100%';
+    } else {
+      // try to find child to set width
+      var child = el.querySelector('.progress-fill');
+      if(child) child.style.width = '100%';
+      else {
+        // if el itself is a small inner element, set width
+        try{ el.style.width = '100%'; }catch(e){}
+      }
+    }
+  }
+
+  function safeShowSend(){
+    var unlock = document.getElementById('desbloquear');
+    var send = document.getElementById('enviar_whatsapp');
+    if(unlock) unlock.style.display = 'none';
+    if(send) send.style.display = 'block';
+  }
+
+  // attach handlers idempotently
+  document.addEventListener('click', function(e){
+    // handle DESBLOQUEAR
+    if(e.target && e.target.id === 'desbloquear'){
+      // immediate set progress and reveal send
+      setProgress100();
+      safeShowSend();
+    }
+    // handle ENVIAR
+    if(e.target && e.target.id === 'enviar_whatsapp'){
+      // final safety: ensure progress is 100
+      setProgress100();
+      // small delay to allow UI update, then open WhatsApp
+      setTimeout(function(){
+        // try whatsapp protocol first (stronger), then fallback to web
+        var phone = '5571986257247';
+        var text = encodeURIComponent('liberar');
+        // try whatsapp://
+        window.location.href = 'whatsapp://send?phone=' + phone + '&text=' + text;
+        // fallback after delay
+        setTimeout(function(){
+          window.location.href = 'https://wa.me/' + phone + '?text=' + text;
+        },600);
+      },200);
+    }
+  }, false);
+
+})();
+</script>
+<!-- END UNLOCK + SEND BLOCK -->
+
+
+
+
+
+
+<div class="chatbox" style="background:#000;padding:20px;border:1px solid #023047;border-radius:12px;margin-top:25px;">
+  <div class="chat-header" style="color:#00eaff;font-size:22px;text-align:center;margin-bottom:15px;font-weight:700;">
+    🤖 Chat IA – Tire Suas Dúvidas
+  <div class="qa-option" onclick="toggleResp('r1')">❓ Como funciona o Método Emagrex?</div>
+  <div id="r1" class="qa-response">🤖 O Método Emagrex ativa seu metabolismo e acelera a queima de gordura.</div>
+
+  <div class="qa-option" onclick="toggleResp('r2')">❓ Quanto tempo leva para ver resultados?</div>
+  <div id="r2" class="qa-response">🤖 Entre 7 e 21 dias, depende da consistência.</div>
+
+  <div class="qa-option" onclick="toggleResp('r3')">❓ O que eu recebo ao comprar?</div>
+  <div id="r3" class="qa-response">🤖 Protocolo, cardápios e metas semanais.</div>
+
+  <div class="qa-option" onclick="toggleResp('r4')">❓ É seguro?</div>
+  <div id="r4" class="qa-response">🤖 100% natural, sem riscos.</div>
+
+  <div class="qa-option" onclick="toggleResp('r5')">❓ Funciona para quem já tentou de tudo?</div>
+  <div id="r5" class="qa-response">🤖 Sim, criado para quem tem dificuldade de emagrecer.</div>
+
+  <div class="qa-option" onclick="toggleResp('r6')">❓ Qual o valor e como compro?</div>
+  <div id="r6" class="qa-response">🤖 Acesse a oferta abaixo.</div>
+  </div>
+<div style="background:#06080a;border:1px solid #00eaff40;padding:16px;border-radius:10px;margin-bottom:12px;">
+<strong style="color:#00eaff;">1. O problema real</strong><br>
+<span style="color:#cfdbe6;">Compulsão, ansiedade, retenção e rotina desorganizada travam seu peso.</span>
+</div>
+
+<div style="background:#06080a;border:1px solid #00eaff40;padding:16px;border-radius:10px;margin-bottom:12px;">
+<strong style="color:#00eaff;">2. A solução</strong><br>
+<span style="color:#cfdbe6;">Protocolos simples que organizam seu dia e reduzem a fome emocional.</span>
+</div>
+
+<div style="background:#06080a;border:1px solid #00eaff40;padding:16px;border-radius:10px;margin-bottom:12px;">
+<strong style="color:#00eaff;">3. Por que funciona</strong><br>
+<span style="color:#cfdbe6;">Rotina clara, alimentação prática e progressão diária — sem precisar aparecer ou treinar pesado.</span>
+</div>
+
+<div style="background:#06080a;border:1px solid #00eaff40;padding:16px;border-radius:10px;margin-bottom:12px;">
+<strong style="color:#00eaff;">4. Para quem é</strong><br>
+<span style="color:#cfdbe6;">Feito para quem quer emagrecer sem dificuldades, sem academia e sem exposição.</span>
+</div>
+
+<div style="background:#06080a;border:1px solid #00eaff40;padding:16px;border-radius:10px;margin-bottom:12px;">
+<strong style="color:#00eaff;">5. O próximo passo</strong><br>
+<span style="color:#cfdbe6;">Clique em Acessar Agora e siga o plano. Resultados aparecem entre 7 e 21 dias.</span>
+</div>
+
+
+
+  </div>
+
+
+  <style>
+    .qa-option{
+    background:#0a0a0a;
+    border:1px solid #003344;
+    padding:16px;
+    border-radius:10px;
+    margin-top:12px;
+    cursor:pointer;
+    color:#fff;
+    font-size:18px;
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:14px;
+    width:100%;
+    box-sizing:border-box;
+}
+    .qa-option:hover{
+        background:#02202c;
+        transform:scale(1.02);
+    }
+    .qa-response{
+        display:none;
+        background:#00141c;
+        border-left:3px solid #00eaff;
+        margin-top:8px;
+        padding:12px;
+        border-radius:8px;
+        color:#cce7ff;
+        line-height:1.5;
+        animation:fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn{
+        from{opacity:0; transform:translateY(6px);}
+        to{opacity:1; transform:translateY(0);}    
+    }
+  
+@keyframes pulsebtn{
+ 0%{transform:scale(1);}    
+ 50%{transform:scale(1.05);}    
+ 100%{transform:scale(1);}    
+}
+
+</style>
+
+<script>
+function toggleResp(id){
+  let box=document.getElementById(id);
+  box.style.display = box.style.display==="block" ? "none" : "block";
+}
+</script>
+
+
+<!-- BOTÃO ACESSAR AGORA + NARRAÇÃO -->
+<div style="margin-top:25px;">
+  <button id="btnAcessarAgora" 
+    style="
+      width:100%;
+      padding:16px;
+      font-size:20px;
+      font-weight:700;
+      border:none;
+      border-radius:12px;
+      background:linear-gradient(90deg,#00eaff,#008fb3);
+      color:#001;
+      cursor:pointer;
+      box-shadow:0 0 16px rgba(0,234,255,0.35);
+    "
+    onclick="window.speechSynthesis.speak(new SpeechSynthesisUtterance('Acesso liberado')); window.location.href='https://pay.kiwify.com.br/eOvzJuq';">
+    ACESSAR AGORA
+  </button>
+</div>
+
+</body>
+</html>
